@@ -1,16 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
+// Re-export from lib/supabase to have single client instance
+export { supabase, getCurrentUser, getUserProfile, hasRole } from '../lib/supabase';
+export default null;
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Realtime subscribe helper
+import { supabase } from '../lib/supabase';
 
 export const subscribe = <T>(
   table: string,
   callback: (payload: { new: T; old?: T }) => void
 ) => {
   const channel = supabase
-    .channel(`${table}_realtime`)
+    .channel(`${table}_realtime_${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
     .subscribe();
 

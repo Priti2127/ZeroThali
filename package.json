@@ -1,26 +1,35 @@
 {
   "name": "zerothali",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup-db": "node setup-db.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.44.2",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "react-router-dom": "^6.22.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "@types/uuid": "^10.0.0",
     "date-fns": "^3.6.0",
-    "tailwindcss": "^3.4.0"
+    "lucide-react": "^0.441.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^2.12.7",
+    "sonner": "^1.7.4",
+    "uuid": "^14.0.3"
   },
   "devDependencies": {
+    "@types/react": "^18.3.9",
+    "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "vite": "^5.2.0",
-    "vite-plugin-pwa": "^0.19.0",
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.0"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "vite-plugin-pwa": "^0.20.5"
   }
 }

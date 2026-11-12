@@ -1,0 +1,128 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import type { User } from '../types';
+
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      setUser(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
+  };
+
+  const signUp = async (
+    email: string,
+    password: string,
+    fullName: string,
+    role: string,
+    additionalData?: any
+  ) => {
+    // First, create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) return { data: null, error: authError };
+
+    // Then create user profile
+    if (authData.user) {
+      const { error: profileError } = await supabase.from('users').insert({
+        id: authData.user.id,
+        email,
+        full_name: fullName,
+        role,
+        ...additionalData,
+      });
+
+      if (profileError) return { data: null, error: profileError };
+    }
+
+    return { data: authData, error: null };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      setUser(null);
+      setSession(null);
+    }
+    return { error };
+  };
+
+  const signInWithOTP = async (phone: string) => {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      phone,
+    });
+    return { data, error };
+  };
+
+  const verifyOTP = async (phone: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: 'sms',
+    });
+    return { data, error };
+  };
+
+  return {
+    user,
+    session,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    signInWithOTP,
+    verifyOTP,
+  };
+};
