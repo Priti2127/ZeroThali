@@ -13,8 +13,17 @@ const Login: React.FC = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Demo mode - quick testing without signup issues
+  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    // Auto-submit after setting values
+    setTimeout(() => {
+      handleSubmitWithCredentials(demoEmail, demoPassword);
+    }, 100);
+  };
+
+  const handleSubmitWithCredentials = async (email: string, password: string) => {
     setError('');
     setLoading(true);
 
@@ -29,6 +38,11 @@ const Login: React.FC = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSubmitWithCredentials(email, password);
   };
 
   return (
@@ -111,15 +125,46 @@ const Login: React.FC = () => {
 
         {/* Demo Accounts */}
         <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">
-            Demo Accounts:
+          <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
+            Quick Demo (Click to Test):
           </p>
-          <div className="space-y-1 text-xs text-blue-800 dark:text-blue-400">
-            <p>• Student: student@college.edu / password123</p>
-            <p>• Manager: manager@college.edu / password123</p>
-            <p>• Receiver: ngo@example.com / password123</p>
-            <p>• Admin: admin@college.edu / password123</p>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('student@college.edu', 'password123')}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+            >
+              👨‍🎓 Login as Student
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('manager@college.edu', 'password123')}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+            >
+              👨‍💼 Login as Manager
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('ngo@example.com', 'password123')}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+            >
+              🤝 Login as Receiver (NGO)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDemoLogin('admin@college.edu', 'password123')}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+            >
+              ⚙️ Login as Admin
+            </button>
           </div>
+          <p className="text-xs text-blue-700 dark:text-blue-300 mt-3">
+            💡 Tip: If demo accounts don't exist, they need to be created in Supabase Auth first.
+          </p>
         </div>
       </div>
     </div>
