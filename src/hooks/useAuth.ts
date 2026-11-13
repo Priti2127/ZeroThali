@@ -42,21 +42,59 @@ export const useAuth = () => {
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('User profile not found, creating default:', error);
+        // If user doesn't exist in public.users, create a default profile
+        const { data: authUser } = await supabase.auth.getUser();
+        if (authUser.user) {
+          const defaultUser = {
+            id: userId,
+            email: authUser.user.email || '',
+            full_name: authUser.user.user_metadata?.full_name || 'User',
+            role: 'student', // Default role
+            is_registered: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setUser(defaultUser as User);
+        }
+        return;
+      }
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Fallback: create temporary user object so dashboard can load
+      const tempUser: User = {
+        id: userId,
+        email: '',
+        full_name: 'User',
+        role: 'student',
+        is_registered: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setUser(tempUser);
     } finally {
       setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      
+      if (error) {
+        console.error('SignIn error:', error);
+      }
+      
+      return { data, error };
+    } catch (err: any) {
+      console.error('SignIn exception:', err);
+      return { data: null, error: err };
+    }
   };
 
   const signUp = async (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -9,21 +9,43 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
   // Demo mode - quick testing without signup issues
-  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    // Auto-submit after setting values
-    setTimeout(() => {
-      handleSubmitWithCredentials(demoEmail, demoPassword);
-    }, 100);
+  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
+    console.log('Demo login attempt:', demoEmail);
+    setError('');
+    setLoading(true);
+    
+    const { data, error: signInError } = await signIn(demoEmail, demoPassword);
+
+    if (signInError) {
+      console.error('Demo login error:', signInError);
+      setError(signInError.message || 'Login failed');
+      setDebugInfo(`Error: ${JSON.stringify(signInError)}`);
+      toast.error('Failed to sign in: ' + signInError.message);
+    } else if (data?.session) {
+      console.log('Demo login successful:', data);
+      setDebugInfo('Login successful, redirecting...');
+      toast.success('Welcome back!');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
+    } else {
+      console.error('No session returned');
+      setError('No session returned from login');
+      setDebugInfo('No session data');
+      toast.error('Login failed: no session');
+    }
+
+    setLoading(false);
   };
 
-  const handleSubmitWithCredentials = async (email: string, password: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
     setLoading(true);
 
@@ -32,17 +54,12 @@ const Login: React.FC = () => {
     if (signInError) {
       setError(signInError.message);
       toast.error('Failed to sign in');
-    } else if (data) {
+    } else if (data?.session) {
       toast.success('Welcome back!');
       navigate('/dashboard');
     }
 
     setLoading(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await handleSubmitWithCredentials(email, password);
   };
 
   return (
@@ -62,7 +79,10 @@ const Login: React.FC = () => {
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <div>
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                {debugInfo && <p className="text-xs text-red-500 mt-1">{debugInfo}</p>}
+              </div>
             </div>
           )}
 
@@ -104,8 +124,9 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-primary hover:bg-primary-dark disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg disabled:cursor-not-allowed"
+              className="w-full py-3 bg-primary hover:bg-primary-dark disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {loading && <Loader size={16} className="animate-spin" />}
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
@@ -126,14 +147,14 @@ const Login: React.FC = () => {
         {/* Demo Accounts */}
         <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-            Quick Demo (Click to Test):
+            🚀 Quick Demo (Click to Test):
           </p>
           <div className="space-y-2">
             <button
               type="button"
               onClick={() => handleDemoLogin('student@college.edu', 'password123')}
               disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition font-medium"
             >
               👨‍🎓 Login as Student
             </button>
@@ -141,7 +162,7 @@ const Login: React.FC = () => {
               type="button"
               onClick={() => handleDemoLogin('manager@college.edu', 'password123')}
               disabled={loading}
-              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition font-medium"
             >
               👨‍💼 Login as Manager
             </button>
@@ -149,7 +170,7 @@ const Login: React.FC = () => {
               type="button"
               onClick={() => handleDemoLogin('ngo@example.com', 'password123')}
               disabled={loading}
-              className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+              className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition font-medium"
             >
               🤝 Login as Receiver (NGO)
             </button>
@@ -157,13 +178,13 @@ const Login: React.FC = () => {
               type="button"
               onClick={() => handleDemoLogin('admin@college.edu', 'password123')}
               disabled={loading}
-              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition"
+              className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm rounded-lg transition font-medium"
             >
               ⚙️ Login as Admin
             </button>
           </div>
           <p className="text-xs text-blue-700 dark:text-blue-300 mt-3">
-            💡 Tip: If demo accounts don't exist, they need to be created in Supabase Auth first.
+            💡 Demo accounts must exist in Supabase Auth. If they don't work, create them in Supabase Dashboard.
           </p>
         </div>
       </div>
