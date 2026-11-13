@@ -66,28 +66,47 @@ export const useAuth = () => {
     role: string,
     additionalData?: any
   ) => {
-    // First, create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (authError) return { data: null, error: authError };
-
-    // Then create user profile
-    if (authData.user) {
-      const { error: profileError } = await supabase.from('users').insert({
-        id: authData.user.id,
-        email,
-        full_name: fullName,
-        role,
-        ...additionalData,
+    try {
+      // Trim and lowercase email
+      const cleanEmail = email.trim().toLowerCase();
+      
+      // First, create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
       });
 
-      if (profileError) return { data: null, error: profileError };
-    }
+      if (authError) {
+        console.error('Auth error:', authError);
+        return { data: null, error: authError };
+      }
 
-    return { data: authData, error: null };
+      // Then create user profile
+      if (authData.user) {
+        const { error: profileError } = await supabase.from('users').insert({
+          id: authData.user.id,
+          email: cleanEmail,
+          full_name: fullName,
+          role,
+          ...additionalData,
+        });
+
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          return { data: null, error: profileError };
+        }
+      }
+
+      return { data: authData, error: null };
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      return { data: null, error: err };
+    }
   };
 
   const signOut = async () => {

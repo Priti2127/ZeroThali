@@ -24,21 +24,41 @@ const Signup: React.FC = () => {
       toast.error('Please fill all required fields');
       return;
     }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
     if (form.password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
+    
     setLoading(true);
-    const { error } = await signUp(form.email, form.password, form.full_name, form.role, {
-      hostel_name: form.hostel_name || null,
-      room_number: form.room_number || null,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Account created! Please check your email to verify.');
-      navigate('/login');
+    try {
+      const { error } = await signUp(form.email, form.password, form.full_name, form.role, {
+        hostel_name: form.hostel_name || null,
+        room_number: form.room_number || null,
+      });
+      
+      if (error) {
+        // Check if it's an email validation error
+        if (error.message.includes('invalid') || error.message.includes('Invalid')) {
+          toast.error('Email format not accepted. Try a different email address.');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success('Account created successfully!');
+        navigate('/login');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create account');
+    } finally {
+      setLoading(false);
     }
   };
 
